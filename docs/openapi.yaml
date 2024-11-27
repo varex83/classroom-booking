@@ -1,0 +1,813 @@
+openapi: 3.0.0
+info:
+  title: Classroom Booking API
+  description: API documentation for the Classroom Booking application.
+  version: 1.0.0
+servers:
+- url: http://localhost:3000
+  description: Local server
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+paths:
+  /v1/auth/login:
+    post:
+      summary: User login
+      description: Authenticates a user with email and password.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: The user's email address.
+                password:
+                  type: string
+                  format: password
+                  description: The user's password.
+              required:
+                - email
+                - password
+      responses:
+        200:
+          description: Successful login
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        description: The unique identifier for the user.
+                      email:
+                        type: string
+                        description: The user's email address.
+                      name:
+                        type: string
+                        description: The user's name (if available).
+        401:
+          description: Invalid email or password
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Invalid email or password
+        400:
+          description: Authentication failed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Authentication failed
+  /v1/booking:
+    post:
+      summary: Create a booking
+      description: Creates a new booking for a user in a specified classroom. Requires JWT authentication.
+      security:
+        - bearerAuth: [] # Apply JWT authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userId:
+                  type: integer
+                  description: The ID of the user creating the booking.
+                classroomId:
+                  type: integer
+                  description: The ID of the classroom to be booked.
+                date:
+                  type: string
+                  format: date
+                  description: The date of the booking (YYYY-MM-DD).
+                time:
+                  type: string
+                  description: The time of the booking (e.g., "14:00").
+              required:
+                - userId
+                - classroomId
+                - date
+                - time
+      responses:
+        201:
+          description: Booking created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    description: The unique ID of the booking.
+                  userId:
+                    type: integer
+                    description: The ID of the user who created the booking.
+                  classroomId:
+                    type: integer
+                    description: The ID of the booked classroom.
+                  date:
+                    type: string
+                    format: date
+                    description: The date of the booking.
+                  time:
+                    type: string
+                    description: The time of the booking.
+                  user:
+                    type: object
+                    description: Information about the user who created the booking.
+                  classroom:
+                    type: object
+                    description: Information about the booked classroom.
+        500:
+          description: Failed to create booking
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Failed to create booking
+  /v1/booking/{id}:
+    get:
+      summary: Get booking details
+      description: Fetch details of a specific booking by ID. Requires JWT authentication.
+      security:
+        - bearerAuth: [ ] # Apply JWT authentication
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: The ID of the booking to retrieve.
+      responses:
+        200:
+          description: Booking retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    description: The unique ID of the booking.
+                  user:
+                    type: object
+                    description: Details about the user.
+                  classroom:
+                    type: object
+                    description: Details about the classroom.
+        404:
+          description: Booking not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Booking not found
+        500:
+          description: Failed to fetch booking
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Failed to fetch booking
+    patch:
+      summary: Update booking details
+      description: Update the details of a specific booking. Requires JWT authentication.
+      security:
+        - bearerAuth: [ ] # Apply JWT authentication
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: The ID of the booking to update.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                classroomId:
+                  type: integer
+                  description: The ID of the classroom to update.
+                date:
+                  type: string
+                  format: date
+                  description: The updated booking date (YYYY-MM-DD).
+                time:
+                  type: string
+                  description: The updated booking time.
+                userId:
+                  type: integer
+                  description: The ID of the user requesting the update.
+              required:
+                - classroomId
+                - date
+                - time
+                - userId
+      responses:
+        200:
+          description: Booking updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  classroom:
+                    type: object
+                    description: Updated classroom details.
+                  user:
+                    type: object
+                    description: Updated user details.
+        403:
+          description: Not authorized to edit this booking
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Not authorized to edit this booking
+        400:
+          description: Time slot already booked
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Time slot already booked
+        404:
+          description: Booking not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Booking not found
+        500:
+          description: Failed to update booking
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Failed to update booking
+    delete:
+      summary: Cancel a booking
+      description: Deletes a booking based on the booking ID. Requires JWT authentication.
+      security:
+        - bearerAuth: [] # Apply JWT authentication
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: The ID of the booking to be cancelled.
+      responses:
+        200:
+          description: Booking cancelled successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Booking cancelled successfully
+        500:
+          description: Failed to cancel booking
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Failed to cancel booking
+  /v1/classrooms:
+    get:
+      summary: Get all classrooms
+      description: Fetches a list of classrooms along with their bookings and user details. Requires JWT authentication.
+      security:
+        - bearerAuth: [ ] # Apply JWT authentication
+      responses:
+        200:
+          description: A list of classrooms with bookings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                      description: The unique ID of the classroom.
+                    name:
+                      type: string
+                      description: The name of the classroom.
+                    capacity:
+                      type: integer
+                      description: The capacity of the classroom.
+                    bookings:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          id:
+                            type: integer
+                            description: The booking ID.
+                          user:
+                            type: object
+                            description: Details about the user who made the booking.
+        500:
+          description: Failed to fetch classrooms
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Failed to fetch classrooms
+
+    post:
+      summary: Create a classroom
+      description: Adds a new classroom. Requires JWT authentication.
+      security:
+        - bearerAuth: [ ] # Apply JWT authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: The name of the classroom.
+                capacity:
+                  type: integer
+                  description: The capacity of the classroom.
+              required:
+                - name
+                - capacity
+      responses:
+        201:
+          description: Classroom created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    description: The unique ID of the classroom.
+                  name:
+                    type: string
+                    description: The name of the classroom.
+                  capacity:
+                    type: integer
+                    description: The capacity of the classroom.
+        500:
+          description: Failed to create classroom
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Failed to create classroom
+  /v1/classrooms/{id}:
+    patch:
+      summary: Update a classroom
+      description: Updates the details of a specific classroom. Requires JWT authentication.
+      security:
+        - bearerAuth: [ ] # Apply JWT authentication
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: The ID of the classroom to update.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: The updated name of the classroom.
+                capacity:
+                  type: integer
+                  description: The updated capacity of the classroom.
+                userId:
+                  type: integer
+                  description: The ID of the user making the update.
+              required:
+                - name
+                - capacity
+                - userId
+      responses:
+        200:
+          description: Classroom updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  name:
+                    type: string
+                  capacity:
+                    type: integer
+        500:
+          description: Failed to update classroom
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Failed to update classroom
+
+    delete:
+      summary: Delete a classroom
+      description: Deletes a specific classroom by ID. Requires JWT authentication.
+      security:
+        - bearerAuth: [ ] # Apply JWT authentication
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: The ID of the classroom to delete.
+      responses:
+        200:
+          description: Classroom deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  name:
+                    type: string
+                  capacity:
+                    type: integer
+        500:
+          description: Failed to delete classroom
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Failed to delete classroom
+  /v1/schedule:
+    get:
+      summary: Get schedule of bookings
+      description: Fetches the schedule of bookings for a specific date range and classroom. Requires JWT authentication.
+      security:
+        - bearerAuth: [ ] # Apply JWT authentication
+      parameters:
+        - in: query
+          name: startDate
+          schema:
+            type: string
+            format: date
+          required: false
+          description: The start date of the schedule range (YYYY-MM-DD).
+        - in: query
+          name: endDate
+          schema:
+            type: string
+            format: date
+          required: false
+          description: The end date of the schedule range (YYYY-MM-DD).
+        - in: query
+          name: classroomId
+          schema:
+            type: integer
+          required: false
+          description: The ID of the classroom to filter bookings.
+      responses:
+        200:
+          description: List of bookings within the specified range and classroom
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                      description: The unique ID of the booking.
+                    date:
+                      type: string
+                      format: date
+                      description: The date of the booking.
+                    time:
+                      type: string
+                      description: The time of the booking.
+                    classroom:
+                      type: object
+                      description: Details of the classroom associated with the booking.
+                      properties:
+                        id:
+                          type: integer
+                        name:
+                          type: string
+                        capacity:
+                          type: integer
+                    user:
+                      type: object
+                      description: Details of the user who made the booking.
+                      properties:
+                        id:
+                          type: integer
+                        name:
+                          type: string
+                        email:
+                          type: string
+        500:
+          description: Failed to fetch schedule
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Failed to fetch schedule
+                  details:
+                    type: string
+                    example: Error details
+  /v1/users:
+    post:
+      summary: Create a new user
+      description: Creates a new user with a specified role.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: The name of the user.
+                email:
+                  type: string
+                  format: email
+                  description: The email address of the user.
+                password:
+                  type: string
+                  description: The password for the user (ensure hashing in production).
+                role:
+                  type: string
+                  description: The role of the user. Defaults to 'Staff'.
+              required:
+                - name
+                - email
+                - password
+      responses:
+        201:
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    description: The unique ID of the user.
+                  name:
+                    type: string
+                  email:
+                    type: string
+                  role:
+                    type: string
+                    description: The role of the user.
+        400:
+          description: User already exists or failed to create user
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: User with this email already exists
+
+    get:
+      summary: Get all users
+      description: Fetches a list of all users with their details. Requires JWT authentication.
+      security:
+        - bearerAuth: [ ] # Apply JWT authentication
+      responses:
+        200:
+          description: List of users retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                      description: The unique ID of the user.
+                    name:
+                      type: string
+                      description: The name of the user.
+                    email:
+                      type: string
+                      description: The email address of the user.
+                    role:
+                      type: string
+                      description: The role of the user.
+                    department:
+                      type: string
+                      description: The department of the user (if applicable).
+        400:
+          description: Failed to fetch users
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Failed to fetch users
+  /v1/activity:
+    get:
+      summary: Fetch recent activities
+      description: Retrieves the latest 10 activities for logging and tracking purposes. Requires JWT authentication.
+      security:
+        - bearerAuth: [ ] # Apply JWT authentication
+      responses:
+        200:
+          description: List of recent activities retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                      description: The unique ID of the activity.
+                    type:
+                      type: string
+                      description: The type of the activity (e.g., 'booking', 'classroom').
+                    action:
+                      type: string
+                      description: The action performed (e.g., 'created', 'updated', 'deleted').
+                    user:
+                      type: object
+                      description: Details of the user associated with the activity.
+                      properties:
+                        name:
+                          type: string
+                          description: The name of the user who performed the action.
+                    details:
+                      type: string
+                      description: Additional details about the activity.
+                    timestamp:
+                      type: string
+                      format: date-time
+                      description: The timestamp when the activity occurred.
+        500:
+          description: Failed to fetch activities
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Failed to fetch activities
+
+    post:
+      summary: Log a new activity
+      description: Logs a new activity for tracking purposes. Requires JWT authentication.
+      security:
+        - bearerAuth: [ ] # Apply JWT authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  description: The type of activity (e.g., 'booking', 'classroom').
+                action:
+                  type: string
+                  description: The action performed (e.g., 'created', 'updated', 'deleted').
+                userId:
+                  type: integer
+                  description: The ID of the user associated with the activity.
+                details:
+                  type: string
+                  description: Additional details about the activity.
+              required:
+                - type
+                - action
+                - userId
+                - details
+      responses:
+        201:
+          description: Activity logged successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    description: The unique ID of the activity.
+                  type:
+                    type: string
+                  action:
+                    type: string
+                  user:
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                        description: The name of the user associated with the activity.
+                  details:
+                    type: string
+                    description: Additional details about the activity.
+                  timestamp:
+                    type: string
+                    format: date-time
+                    description: The timestamp when the activity was logged.
+        500:
+          description: Failed to log activity
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Failed to create activity
+
+
+
+
+
+
